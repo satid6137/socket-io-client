@@ -1,0 +1,12 @@
+# ไม่เอา node_modules
+node_modules/
+
+# ไม่เอาไฟล์ .env
+.env
+
+# ไม่เอา log หรือ temp
+*.log
+*.tmp
+
+# ไม่เอา .zip
+server.zip
