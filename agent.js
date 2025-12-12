@@ -46,6 +46,7 @@ function getDbConfig(hisType) {
     password: process.env[`${prefix}_DB_PASSWORD`],
     database: process.env[`${prefix}_DB_NAME`],
     port: Number(process.env[`${prefix}_DB_PORT`]) || 3306,
+    charset: 'tis620',
     rowsAsArray: false,
     // ✅ decode TIS-620 ให้เป็น UTF-8
     typeCast(field, next) {
