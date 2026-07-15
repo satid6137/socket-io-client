@@ -133,11 +133,27 @@ async function fetchData(sqlQuery, queryName, hosCode, params, hisType) {
    Emit data
 ========================= */
 async function emitData({ queryName, hisType, data, silent }) {
+  // ⭐ กรณีไม่มีข้อมูล → ต้องส่ง clientData กลับไปให้ server
   if (!Array.isArray(data) || data.length === 0) {
-    logWarn(`ไม่มีข้อมูลสำหรับส่งกลับ (${queryName}/${hisType})`);
+    logWarn(`ไม่มีข้อมูลสำหรับส่งกลับ (${queryName}/${hisType}) → ส่ง empty chunk`);
+
+    const emptyPayload = JSON.stringify([]); // ส่ง array ว่าง
+    const { compressed, payload } = maybeGzipString(emptyPayload);
+
+    socket.emit('clientData', {
+      hosCode,
+      queryName,
+      chunkIndex: 0,
+      chunkTotal: 1,
+      compressed,
+      data: payload,
+      silent
+    });
+
     return;
   }
 
+  // ⭐ กรณีมีข้อมูล → ส่งแบบ chunk ตามปกติ
   const chunks = chunkArray(data, MAX_ROWS_PER_CHUNK);
   logInfo(`เตรียมส่งข้อมูลแบบ chunk: ${chunks.length} ชิ้น (${queryName}/${hisType})`);
 
@@ -175,16 +191,21 @@ function tryFetchDataWithRetry(sqlQuery, queryName, hosCodeLocal, params, silent
       const { data, rowCount } = result;
 
       if (rowCount === 0) {
-        logWarn(`ผลลัพธ์ว่าง: ${queryName}/${hisType}`);
-        socket.emit('clientMetric', {
-          hosCode,
-          queryName,
-          hisType,
-          status: 'empty',
-          elapsedMs: Date.now() - startedAt
-        });
-        return;
-      }
+  logWarn(`ผลลัพธ์ว่าง: ${queryName}/${hisType}`);
+
+  // ส่ง empty chunk กลับไปให้ server
+  await emitData({ queryName, hisType, data: [], silent });
+
+  socket.emit('clientMetric', {
+    hosCode,
+    queryName,
+    hisType,
+    status: 'empty',
+    elapsedMs: Date.now() - startedAt
+  });
+
+  return;
+}
 
       logInfo(`[Preview] ${queryName}/${hisType} row[0]`, data[0]);
 
