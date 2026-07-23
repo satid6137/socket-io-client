@@ -1,0 +1,7 @@
+services:
+  socket-io-client:
+    build: .
+    container_name: socket-io-client
+    restart: always
+    environment:
+      NODE_ENV: production
