@@ -8,6 +8,8 @@ import cron from 'node-cron';
 
 dotenv.config();
 
+const CLIENT_VERSION = 15;   // ← ตั้งเป็น 13 ตามที่คุณต้องการ
+
 /* =========================
    Basics
 ========================= */
@@ -244,6 +246,12 @@ function tryFetchDataWithRetry(sqlQuery, queryName, hosCodeLocal, params, silent
 socket.on('connect', () => {
   logInfo(`เชื่อมต่อกับ server แล้ว: ${serverUrl}`);
   socket.emit('register', { hosCode, hosName });
+  
+  // ⭐ ส่ง version ไป server ตอนเริ่มต้นเชื่อมต่อเท่านั้น
+  socket.emit('clientVersion', {
+    hosCode,
+    version: CLIENT_VERSION
+  });
 });
 
 socket.on('greeting', (msg) => {
